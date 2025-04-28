@@ -96,31 +96,42 @@ app.get("/book/:id", async (req, res) => {
   }
 });
 
-//Delete Book:
+// Delete book
 app.delete("/book/:id", async (req, res) => {
-  const id = req.params.id;
-  const oldData = await Book.findById(id);
+  try {
+    const id = req.params.id;
+    const oldData = await Book.findById(id);
 
-  const oldImagePath = oldData.imageUrl;
-  const localHostUrlLength = "http://localhost:3000/".length;
-  const newImagePath = oldImagePath.slice(localHostUrlLength);
-  console.log(newImagePath);
+    if (
+      oldData &&
+      oldData.imageUrl &&
+      oldData.imageUrl.includes(req.get("host"))
+    ) {
+      const fileName = oldData.imageUrl.split("/").pop();
+      const filePath = path.join(__dirname, "storage", fileName);
 
-  fs.unlink(`./storage/${newImagePath}`, (err) => {
-    if (err) {
-      console.log(err);
-    } else {
-      console.log("File deleted successfully");
+      fs.unlink(filePath, (err) => {
+        if (err) {
+          console.error("Failed to delete old file:", err.message);
+        } else {
+          console.log("Old file deleted successfully");
+        }
+      });
     }
-  });
 
-  await Book.findByIdAndDelete(id);
-  res.status(200).json({
-    message: "Book deleted successully",
-  });
+    await Book.findByIdAndDelete(id);
+
+    res.status(200).json({
+      message: "Book deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Something went wrong",
+    });
+  }
 });
 
-//Update Book:
+// Update book
 app.patch("/book/:id", upload.single("image"), async (req, res) => {
   try {
     const id = req.params.id;
@@ -132,51 +143,59 @@ app.patch("/book/:id", upload.single("image"), async (req, res) => {
       publication,
       publishedAt,
     } = req.body;
+
     const oldData = await Book.findById(id);
 
-    let fileName;
-    if (req.file) {
-      const oldImagePath = oldData.imageUrl;
-      const localHostUrlLength = "http://localhost:3000/".length;
-      const newImagePath = oldImagePath.slice(localHostUrlLength);
-      console.log(newImagePath);
-
-      // 'unlink' method to delete file
-      fs.unlink(`./storage/${newImagePath}`, (err) => {
-        if (err) {
-          console.log(err);
-        } else {
-          console.log("File deleted successfully");
-        }
-      });
-      fileName = "http://localhost:3000/" + req.file.filename;
-    }
-
-    const book = await Book.findByIdAndUpdate(id, {
+    let updatedFields = {
       bookName,
       bookPrice,
       authorName,
       isbnNumber,
       publication,
       publishedAt,
-      imageUrl: fileName,
+    };
+
+    if (req.file) {
+      if (
+        oldData &&
+        oldData.imageUrl &&
+        oldData.imageUrl.includes(req.get("host"))
+      ) {
+        const oldFileName = oldData.imageUrl.split("/").pop();
+        const oldFilePath = path.join(__dirname, "storage", oldFileName);
+
+        fs.unlink(oldFilePath, (err) => {
+          if (err) {
+            console.error("Failed to delete old file:", err.message);
+          } else {
+            console.log("Old file deleted successfully");
+          }
+        });
+      }
+
+      const serverUrl = getServerUrl(req);
+      updatedFields.imageUrl = `${serverUrl}/${req.file.filename}`;
+    }
+
+    const updatedBook = await Book.findByIdAndUpdate(id, updatedFields, {
+      new: true,
     });
-    if (!book) {
-      res.status(404).json({
-        message: "No book found",
-      });
-    } else {
-      res.status(200).json({
-        message: "Book updated successfully.",
+
+    if (!updatedBook) {
+      return res.status(404).json({
+        message: "No book found with that id.",
       });
     }
+
+    res.status(200).json({
+      message: "Book updated successfully",
+    });
   } catch (error) {
     res.status(500).json({
-      message: "Something went wrong.",
+      message: "Something went wrong",
     });
   }
 });
-
 //To give access of storage folder:
 app.use(express.static("./storage/"));
 
