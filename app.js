@@ -34,12 +34,12 @@ app.get("/", (req, res) => {
 //Add Book:
 app.post("/book", upload.single("image"), async (req, res) => {
   console.log(req.file);
-  const serverUrl = "https://lms-backend-jju2.onrender.com";
+  const serverUrl = "https://node-js-dc34.onrender.com";
 
   let fileName;
   if (!req.file) {
     fileName =
-      "https://img.freepik.com/free-vector/hand-drawn-world-book-day-background_23-2149301166.jpg";
+      "https://wallpapers.com/images/featured/aesthetic-book-pictures-gl5fohbknw1j6r0z.jpg";
   } else {
     fileName = `${serverUrl}/${req.file.filename}`;
   }
