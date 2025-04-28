@@ -34,7 +34,7 @@ app.get("/", (req, res) => {
 //Add Book:
 app.post("/book", upload.single("image"), async (req, res) => {
   console.log(req.file);
-  const serverUrl = "http://localhost:3000";
+  const serverUrl = "https://lms-backend-jju2.onrender.com";
 
   let fileName;
   if (!req.file) {
@@ -100,9 +100,9 @@ app.get("/book/:id", async (req, res) => {
 app.delete("/book/:id", async (req, res) => {
   const id = req.params.id;
   const oldData = await Book.findById(id);
-  const serverUrl = "http://localhost:3000/";
+
   const oldImagePath = oldData.imageUrl;
-  const localHostUrlLength = serverUrl.length;
+  const localHostUrlLength = "http://localhost:3000/".length;
   const newImagePath = oldImagePath.slice(localHostUrlLength);
   console.log(newImagePath);
 
@@ -137,7 +137,7 @@ app.patch("/book/:id", upload.single("image"), async (req, res) => {
     let fileName;
     if (req.file) {
       const oldImagePath = oldData.imageUrl;
-      const localHostUrlLength = serverUrl.length;
+      const localHostUrlLength = "http://localhost:3000/".length;
       const newImagePath = oldImagePath.slice(localHostUrlLength);
       console.log(newImagePath);
 
@@ -149,7 +149,7 @@ app.patch("/book/:id", upload.single("image"), async (req, res) => {
           console.log("File deleted successfully");
         }
       });
-      fileName = serverUrl + req.file.filename;
+      fileName = "http://localhost:3000/" + req.file.filename;
     }
 
     const book = await Book.findByIdAndUpdate(id, {
